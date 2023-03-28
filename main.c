@@ -41,6 +41,8 @@ void config_input_sw1(){
   PORTC->PCR[3] = PORT_PCR_MUX(1);  // bit 3 of port C as input
   GPIOC->PDDR |= (1 << 3); // mask bit 3 port C
   GPIOC->PSOR = (1 << 3);
+  PORTC->PCR[3] |= PORT_PCR_IRQC(0b1010); // Enable interrupt on falling edge
+  NVIC_EnableIRQ(2);
 }
 
 int is_sw1_pressed(){
@@ -53,6 +55,8 @@ void config_input_sw2(){
   PORTC->PCR[12] = PORT_PCR_MUX(1);  // bit 12 of port C as input
   GPIOC->PDDR |= (1 << 12); // mask bit 12 port C
   GPIOC->PSOR = (1 << 12);
+  PORTC->PCR[12] |= PORT_PCR_IRQC(0b1010); // Enable interrupt on falling edge
+  NVIC_EnableIRQ(2);
 }
 
 int is_sw2_pressed(){
@@ -72,7 +76,9 @@ int main(void)
   set_up();
   while (1) {
     // checks sw1
-    if (is_sw1_pressed()){
+    if ((PORTC->ISFR & (1 << 3)) != 0){
+      PORTC->PCR[3] |= PORT_PCR_ISF_MASK; // Clear interrupt flag
+      sw1_pressed++;
       sw1_pressed++;
       if (sw1_pressed == 1){
         // sw1 open
@@ -84,7 +90,8 @@ int main(void)
     }
 
     // checks sw2
-    if (is_sw2_pressed()){
+    if ((PORTC->ISFR & (1 << 12)) != 0){
+      PORTC->PCR[12] |= PORT_PCR_ISF_MASK; // Clear interrupt flag
       sw2_pressed++;
       if (sw2_pressed == 1){
         // sw2 open
